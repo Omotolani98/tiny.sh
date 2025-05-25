@@ -1,0 +1,5 @@
+apiVersion: v2
+name: tiny-sh
+description: SSH manager application built with Wish + Bubbletea
+version: 0.1.0
+appVersion: "1.0.0"

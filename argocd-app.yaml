@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tiny-sh
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Omotolani98/tiny.sh
+    targetRevision: HEAD
+    path: helm/tiny-sh
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tiny-sh
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
