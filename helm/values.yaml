@@ -1,0 +1,12 @@
+replicaCount: 1
+
+image:
+  repository: tolani98/tiny.sh
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 42000
+
+resources: {}
