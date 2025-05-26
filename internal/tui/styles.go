@@ -40,7 +40,7 @@ var (
 
 	// Generic Content Area Border
 	contentAreaBorder = lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
+//		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color(colorBorder)).
 		Padding(1, 2) // top/bottom, left/right padding
 
