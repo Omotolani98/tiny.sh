@@ -9,4 +9,13 @@ service:
   type: NodePort
   port: 42000
 
+ingress:
+  enabled: true
+  className: nginx  # or your ingress class
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  host: tiny-sh.local  # replace with your real domain
+  tls: true
+  tlsSecret: tiny-sh-tls
+
 resources: {}

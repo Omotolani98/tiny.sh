@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-//	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -11,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Omotolani98/tiny.sh/internal/tui"
-//	tea "github.com/charmbracelet/bubbletea"
+	//	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
