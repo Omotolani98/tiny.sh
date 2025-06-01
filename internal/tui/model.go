@@ -53,9 +53,14 @@ type model struct {
 	connectionErr error
 	isConnected		bool
 	currentServer *ServerHistoryItem
-	connecting bool
+	connecting 		bool
 	connectingToHost string
 	connectRequestID string
+	monitorOutput string
+	previousTab int
+	cpuMetrics    string
+	memoryMetrics string
+	diskMetrics   string
 }
 
 func NewModel() model {
@@ -285,8 +290,64 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					m.currentTab = (m.currentTab + 1) % numTabs
 				}
+				if m.currentTab == tabMonitor && m.previousTab != tabMonitor && m.isConnected && m.activeSSHClient != nil {
+					return m, func() tea.Msg {
+						return runMonitorCommand(m.activeSSHClient)
+					}
+				}
 			}
+		case "d":
+			if m.isConnected {
+				if m.activeSession != nil {
+					_ = m.activeSession.Close()
+					m.activeSession = nil
+				}
+				
+				if m.activeSSHClient != nil {
+					_ = m.activeSSHClient.Close()
+					m.activeSSHClient = nil
+				}
+
+				m.isConnected = false
+				m.currentServer = nil
+				m.connectionErr = nil
+				m.monitorOutput = ""         				
+				m.connecting = false
+				m.connectingToHost = ""
+				m.connectRequestID = ""
+
+				m.currentTab = tabHistory
+
+				return m, nil
+			}
+		case "r":
+			if m.currentScreen == screenMenu && m.currentTab == tabHistory {
+				index := m.list.Index()
+				if index >= 0 && index < len(m.serverHistory) {
+					err := RemoveHistoryItem(index, &m.serverHistory)
+					if err != nil {
+						m.connectionErr = fmt.Errorf("❌ Failed to remove server: %w", err)
+						return m, nil
+					}
+
+					m.list.SetItems(ToListItems(m.serverHistory))
+
+					if index >= len(m.serverHistory) {
+				m.list.Select(len(m.serverHistory) - 1)
+			} else {
+				m.list.Select(index)
+			}
+
+			if m.currentServer != nil && m.currentServer.Host == m.serverHistory[index].Host {
+					m.isConnected = false
+					m.activeSSHClient = nil
+					m.activeSession = nil
+					m.currentServer = nil
+				}
+			}
+			return m, nil
 		}
+	}
 	case sshConnectedMsg:
 		if msg.requestID != m.connectRequestID {
 			return m, nil
@@ -320,7 +381,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.connecting = false
 		m.connectingToHost = ""
 		return m, nil
-	}	
+	case monitorDataMsg:
+		if msg.err != nil {
+			m.cpuMetrics = "❌ Failed to fetch: " + msg.err.Error()
+			m.memoryMetrics = ""
+			m.diskMetrics = ""
+		} else {
+			m.cpuMetrics = msg.cpu
+			m.memoryMetrics = msg.memory
+			m.diskMetrics = msg.disk
+		}
+		return m, nil
+	}
 
 	var cmd tea.Cmd
 	var cmds []tea.Cmd

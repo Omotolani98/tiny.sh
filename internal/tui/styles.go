@@ -11,10 +11,12 @@ const (
 	colorError      = "#ef4444"
 	colorBorder     = "#333333"
 	coralPink       = "#FB9F89"
+	colorPending	= "#FDCA40"
+	colorSubtle = "#888888"
+	colorGrey = "#555555"
 )
 
 var (
-	// Tabs
 	activeTabStyle = lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color(coralPink)).
@@ -26,7 +28,6 @@ var (
 		Border(lipgloss.NormalBorder()).
 		Bold(false)
 
-	// List Items (for history_list.go)
 	itemStyle = lipgloss.NewStyle().PaddingLeft(2).PaddingRight(2)
 
 	selectedItemStyle = lipgloss.NewStyle().
@@ -36,19 +37,16 @@ var (
 		PaddingRight(1).
 		MarginBottom(0)
 
-	// Generic Content Area Border
 	contentAreaBorder = lipgloss.NewStyle().
-//		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color(colorBorder)).
-		Padding(1, 2) // top/bottom, left/right padding
+		Padding(1, 2)
 
-	// Footer
 	footerStyle = lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderTop(true).
 		BorderForeground(lipgloss.Color(colorBorder)).
 		Padding(1, 2).
-		Foreground(lipgloss.Color("#888888")) // Subtle color for help text
+		Foreground(lipgloss.Color(colorSubtle))
 
 	formTitleStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color(coralPink)).
@@ -65,18 +63,24 @@ var (
 		Foreground(lipgloss.Color(colorPrimary)).
 		Border(lipgloss.NormalBorder()).
 		BorderBottom(true).
-		BorderBottomForeground(lipgloss.Color("#555555"))
+		BorderBottomForeground(lipgloss.Color(colorGrey))
 
 	focusedPromptStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color(coralPink))
 
 	blurredPromptStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#888888"))
+		Foreground(lipgloss.Color(colorSubtle))
 
 	cursorStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color(coralPink))
 
-	// Style for the focus indicator (↳)
 	focusIndicatorStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color(coralPink))
+
+
+	blockStyle = lipgloss.NewStyle().
+		Padding(1, 2).
+		MarginBottom(1).
+		BorderLeft(true).
+		BorderLeftForeground(lipgloss.Color(coralPink))
 )
