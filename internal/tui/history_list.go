@@ -1,66 +1,101 @@
 package tui
 
 import (
+	"encoding/json"
 	"fmt"
-	"io"
 
-	tea "github.com/charmbracelet/bubbletea"
+	"os"
+	"path/filepath"
+
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/lipgloss"
 )
 
-type item struct {
-	title       string
-	description string
+type ServerHistoryItem struct {
+	Title string `json:"title"`
+	Description string `json:"description"`
+	Host string `json:"host"`
+	Port int `json:"port"`
+	Username string `json:"username"`
+	AuthMethod string `json:"auth_method"`
+	Auth AuthDetails `json:"auth"`
+	LastConnected string `json:"last_connected"`
 }
 
-func (i item) FilterValue() string {
-	return i.title
+type AuthDetails struct {
+	Method string `json:"method"`
+	Path   string `json:"path,omitempty"`    
+	Value  string `json:"value,omitempty"`
 }
 
-func (i item) Title() string {
-	return i.title
+type ServerListItem struct {
+	Server ServerHistoryItem
 }
 
-func (i item) Description() string {
-	return i.description
+func (i ServerListItem) Title() string {
+	return i.Server.Title
 }
 
-type itemDelegate struct{}
+func (i ServerListItem) Description() string {
+	return fmt.Sprintf("Host: %s, Port: %d, User: %s, Auth: %s, Last Connected: %s",
+		i.Server.Host, i.Server.Port, i.Server.Username, i.Server.Auth.Method, i.Server.LastConnected)
+}
 
-func (d itemDelegate) Height() int { return 2 }
+func (i ServerListItem) FilterValue() string {
+	return i.Server.Title + " " + i.Server.Host + " " + i.Server.Username + " " + i.Server.Auth.Method
+}
 
-func (d itemDelegate) Spacing() int { return 0 }
+func LoadHistory() ([]ServerHistoryItem, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("could not get user home directory: %w", err)
+	}
+	historyDir := filepath.Join(home, ".tiny")
+	path := filepath.Join(historyDir, "history.json")
 
-func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
-
-func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i, ok := listItem.(item)
-	if !ok {
-		return 
+	content, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []ServerHistoryItem{}, nil
+		}
+		return nil, fmt.Errorf("could not read history file: %w", err)
 	}
 
-	title := i.Title()
-	description := i.Description()
+	var servers []ServerHistoryItem
+	if err := json.Unmarshal(content, &servers); err != nil {	
+		return nil, fmt.Errorf("could not unmarshal history JSON: %w", err)
+	}
+	
+	return servers, nil
+}
 
-	titleText := lipgloss.NewStyle().Foreground(lipgloss.Color(colorPrimary))
-	descText := lipgloss.NewStyle().Foreground(lipgloss.Color("#888888"))
+func SaveHistory(servers []ServerHistoryItem) error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("could not get user home directory: %w", err)
+	}
+	historyDir := filepath.Join(home, ".tiny")
+	path := filepath.Join(historyDir, "history.json")
 
-	content := lipgloss.JoinVertical(lipgloss.Left,
-		titleText.Render(title),
-		descText.Render(description),
-	)
-
-	var renderedItem string
-	if index == m.Index() {
-		renderedItem = selectedItemStyle.
-			Width(m.Width() - selectedItemStyle.GetHorizontalFrameSize()).
-			Render(content)
-	} else {
-		renderedItem = itemStyle.
-			Width(m.Width() - itemStyle.GetHorizontalFrameSize()).
-			Render(content)
+	if err := os.MkdirAll(historyDir, 0755); err != nil {
+		return fmt.Errorf("could not create history directory: %w", err)
 	}
 
-	fmt.Fprint(w, renderedItem)
+	data, err := json.MarshalIndent(servers, "", "  ") // Marshal with indentation
+	if err != nil {
+		return fmt.Errorf("could not marshal history to JSON: %w", err)
+	}
+
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("could not write history file: %w", err)
+	}
+
+	return nil
+}
+
+func ToListItems(history []ServerHistoryItem) []list.Item {
+    var items []list.Item
+    for _, s := range history {
+			items = append(items, ServerListItem{Server: s})
+    }
+    return items
 }

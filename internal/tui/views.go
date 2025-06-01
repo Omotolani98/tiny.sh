@@ -1,8 +1,12 @@
 package tui
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"fmt"
+	"strings"
 
-// renderSplashScreen renders the initial splash screen.
+	"github.com/charmbracelet/lipgloss"
+)
+
 func renderSplashScreen(m model) string {
 	splash := `
 ████████╗██╗███╗   ██╗██╗   ██╗███████╗██╗  ██╗
@@ -22,19 +26,18 @@ func renderSplashScreen(m model) string {
 		Render(splash)
 }
 
-// renderMenuScreen renders the main menu interface.
 func renderMenuScreen(m model) string {
-	// Render individual components
 	tabsView := renderTabs(m)
 	currentTabView := renderCurrentTab(m)
 	footerView := renderFooter(m)
 
-	// Join the components vertically.
 	mainContent := lipgloss.JoinVertical(
 		lipgloss.Left,
 		tabsView,
 		"", // Empty line for spacing
 		currentTabView,
+		"",
+		renderConnectionStatus(m),
 		"", // Empty line for spacing
 		footerView,
 	)
@@ -115,4 +118,61 @@ func renderFooter(m model) string {
 		Render(helpText)
 
 	return footer
+}
+
+func renderConnectionForm(m model) string {
+	var b strings.Builder
+
+	b.WriteString(formTitleStyle.Render("🔌 Connect to a new server") + "\n\n")
+
+	for i, input := range m.form.inputs {
+		b.WriteString(input.View() + "\n")
+		if i == m.form.focus {
+			b.WriteString(focusIndicatorStyle.Render("↳") + "\n")
+		}
+	}
+
+	helpText := "[Tab] to switch • [Enter] to submit • [Esc] to cancel"
+	b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#888888")).Render(helpText))
+
+	formContent := contentAreaBorder.
+		Width(m.getContainerWidth()).
+		Render(b.String())
+
+	return lipgloss.Place(
+		m.width,
+		m.height,
+		lipgloss.Center,
+		lipgloss.Center,
+		formContent,
+	)
+}
+
+func renderConnectionStatus(m model) string {
+	selectedItem, ok := m.list.SelectedItem().(ServerListItem)
+	if !ok {
+		return ""
+	}
+
+	server := selectedItem.Server
+
+	if m.connecting && m.connectingToHost == server.Host {
+		return lipgloss.NewStyle().
+			Foreground(lipgloss.Color(colorAccent)).
+			Render(fmt.Sprintf("⏳ Connecting to %s...", server.Host))
+	}
+
+	if m.connectionErr != nil && m.currentServer != nil && m.currentServer.Host == server.Host {
+		return lipgloss.NewStyle().
+			Foreground(lipgloss.Color(colorError)).
+			Render("🔌 Connection failed: " + m.connectionErr.Error())
+	}
+
+	if m.isConnected && m.currentServer != nil && m.currentServer.Host == server.Host {
+		return lipgloss.NewStyle().
+			Foreground(lipgloss.Color(colorSuccess)).
+			Render(fmt.Sprintf("🟢 Connected to %s@%s", server.Username, server.Host))
+	}
+
+	return ""
 }

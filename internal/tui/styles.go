@@ -2,7 +2,6 @@ package tui
 
 import "github.com/charmbracelet/lipgloss"
 
-// Color Constants
 const (
 	colorBackground = "#1a1a1a"
 	colorPrimary    = "#eeeeee"
@@ -14,7 +13,6 @@ const (
 	coralPink       = "#FB9F89"
 )
 
-// Global Lipgloss Styles
 var (
 	// Tabs
 	activeTabStyle = lipgloss.NewStyle().
@@ -51,4 +49,34 @@ var (
 		BorderForeground(lipgloss.Color(colorBorder)).
 		Padding(1, 2).
 		Foreground(lipgloss.Color("#888888")) // Subtle color for help text
+
+	formTitleStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(coralPink)).
+		Bold(true).
+		PaddingBottom(1)
+
+	focusedInputStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(colorPrimary)).
+		Border(lipgloss.NormalBorder()).
+		BorderBottom(true).
+		BorderBottomForeground(lipgloss.Color(coralPink))
+
+	blurredInputStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(colorPrimary)).
+		Border(lipgloss.NormalBorder()).
+		BorderBottom(true).
+		BorderBottomForeground(lipgloss.Color("#555555"))
+
+	focusedPromptStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(coralPink))
+
+	blurredPromptStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#888888"))
+
+	cursorStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(coralPink))
+
+	// Style for the focus indicator (↳)
+	focusIndicatorStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(coralPink))
 )
