@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"time"
@@ -10,13 +11,19 @@ import (
 )
 
 
-
 type sshConnectedMsg struct {
 	client  *ssh.Client
 	session *ssh.Session
 	server  ServerHistoryItem
 	err     error
 	requestID string
+}
+
+type monitorDataMsg struct {
+	cpu    string
+	memory string
+	disk   string
+	err    error
 }
 
 func trySSHConnect(server ServerHistoryItem, requestID string) tea.Msg {
@@ -60,5 +67,51 @@ func trySSHConnect(server ServerHistoryItem, requestID string) tea.Msg {
 		server:  server,
 		err:     nil,
 		requestID: requestID,
+	}
+}
+
+func runMonitorCommand(client *ssh.Client) tea.Msg {
+	var cpuOut, memOut, diskOut bytes.Buffer
+
+	// CPU
+	session, err := client.NewSession()
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+	session.Stdout = &cpuOut
+	err = session.Run(`top -bn1 | grep "load average"; top -bn1 | grep "Cpu(s)"`)
+	session.Close()
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+
+	// Memory
+	memSession, err := client.NewSession()
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+	memSession.Stdout = &memOut
+	err = memSession.Run(`free -m | awk 'NR==2{printf "Used: %sMB / Total: %sMB", $3, $2}'`)
+	memSession.Close()
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+
+	// Disk
+	diskSession, err := client.NewSession()
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+	diskSession.Stdout = &diskOut
+	err = diskSession.Run(`df -h / | awk 'NR==2{printf "Used: %s / Total: %s (%s)", $3, $2, $5}'`)
+	diskSession.Close()
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+
+	return monitorDataMsg{
+		cpu:    cpuOut.String(),
+		memory: memOut.String(),
+		disk:   diskOut.String(),
 	}
 }

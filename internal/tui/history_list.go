@@ -80,7 +80,7 @@ func SaveHistory(servers []ServerHistoryItem) error {
 		return fmt.Errorf("could not create history directory: %w", err)
 	}
 
-	data, err := json.MarshalIndent(servers, "", "  ") // Marshal with indentation
+	data, err := json.MarshalIndent(servers, "", "  ") 	
 	if err != nil {
 		return fmt.Errorf("could not marshal history to JSON: %w", err)
 	}
@@ -98,4 +98,51 @@ func ToListItems(history []ServerHistoryItem) []list.Item {
 			items = append(items, ServerListItem{Server: s})
     }
     return items
+}
+
+func RemoveHistoryItem(index int, history *[]ServerHistoryItem) error {
+	if index < 0 || index >= len(*history) {
+		return fmt.Errorf("invalid index %d", index)
+	}
+
+	removed := (*history)[index]
+
+	*history = append((*history)[:index], (*history)[index+1:]...)
+
+	if err := SaveHistory(*history); err != nil {
+		return fmt.Errorf("failed to save updated history: %w", err)
+	}
+
+	return AppendToBackup(removed)
+}
+
+func AppendToBackup(item ServerHistoryItem) error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("could not get user home directory: %w", err)
+	}
+	historyDir := filepath.Join(home, ".tiny")
+	backupPath := filepath.Join(historyDir, "history_backup.json")
+
+	var backup []ServerHistoryItem
+
+	if _, err := os.Stat(backupPath); err == nil {
+		data, err := os.ReadFile(backupPath)
+		if err == nil {
+			_ = json.Unmarshal(data, &backup) 
+		}
+	}
+
+	backup = append(backup, item)
+
+	data, err := json.MarshalIndent(backup, "", "  ")
+	if err != nil {
+		return fmt.Errorf("could not marshal backup: %w", err)
+	}
+
+	if err := os.WriteFile(backupPath, data, 0644); err != nil {
+		return fmt.Errorf("could not write backup file: %w", err)
+	}
+
+	return nil
 }

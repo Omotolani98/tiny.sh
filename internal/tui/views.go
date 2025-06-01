@@ -89,7 +89,7 @@ func renderCurrentTab(m model) string {
 	case tabHistory:
 		content = renderHistoryTabContent(m)
 	case tabMonitor:
-		content = "Monitor Tab Content"
+		content = renderMonitorTab(m)
 	case tabFiles:
 		content = "Files Tab Content"
 	case tabSettings:
@@ -111,7 +111,7 @@ func renderHistoryTabContent(m model) string {
 
 func renderFooter(m model) string {
 	containerWidth := m.getContainerWidth()
-	helpText := "Tab/Shift+Tab: Switch tabs • Enter: Select • Ctrl+C/q: Quit"
+	helpText := "Tab/Shift+Tab: Switch tabs • Enter: Select • r: Remove • d: Disconnect • Ctrl+C/q: Quit"
 
 	footer := footerStyle.
 		Width(containerWidth).
@@ -174,5 +174,24 @@ func renderConnectionStatus(m model) string {
 			Render(fmt.Sprintf("🟢 Connected to %s@%s", server.Username, server.Host))
 	}
 
-	return ""
+	return lipgloss.NewStyle().
+			Foreground(lipgloss.Color(colorPending)).
+			Render("🔌 Not Connected")
+}
+
+func renderMonitorTab(m model) string {
+	if !m.isConnected {
+		return "🔌 Not connected to any server."
+	}
+
+	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(colorPrimary))
+	sectionTitle := func(icon, label string) string {
+		return headerStyle.Render(fmt.Sprintf("%s %s", icon, label))
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		blockStyle.Render(sectionTitle("📊", "CPU Usage") + "\n" + m.cpuMetrics),
+		blockStyle.Render(sectionTitle("🧠", "Memory Usage") + "\n" + m.memoryMetrics),
+		blockStyle.Render(sectionTitle("💾", "Disk Usage") + "\n" + m.diskMetrics),	
+	)
 }
