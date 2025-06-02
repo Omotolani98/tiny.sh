@@ -1,0 +1,58 @@
+# .goreleaser.yml
+# Documentation: https://goreleaser.com/customization/
+
+version: 2
+
+# The project name
+project_name: tiny.sh
+
+# Configure the builds
+builds:
+  - id: tiny.sh
+    # Path to the main package (where the main function resides)
+    main: ./cmd/cli/main.go
+    # Output binary name
+    binary: tiny.sh
+    # Linker flags for optimization and embedding version information
+    ldflags:
+      - "-s -w -X main.version={{ .Version }}"
+    # Target operating systems
+    goos:
+      - linux
+      - darwin
+    # Target architectures
+    goarch:
+      - amd64
+      - arm64
+
+# Configure the archives (how the built binaries are packaged)
+archives:
+  - id: default
+    # Format for the archives
+    format: tar.gz
+    # Override format for specific OS if needed (though tar.gz is common)
+    format_overrides:
+      - goos: linux
+        format: tar.gz
+      - goos: darwin
+        format: tar.gz
+    # Name template for the archive files
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    # Files to include in the archive (defaults to the binary)
+    # files:
+    #  - your_other_files_here
+
+# Configure the release process to GitHub
+release:
+  github:
+    owner: Omotolani98
+    name: tiny.sh
+
+# Configure the changelog generation
+changelog:
+  sort: asc # Sort changelog entries ascending
+  # filters: # Optional: filter commit messages
+  #   exclude:
+  #     - '^docs:'
+  #     - '^test:'
+
