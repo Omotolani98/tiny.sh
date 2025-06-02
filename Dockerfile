@@ -1,4 +1,3 @@
-# Stage 1: Build the Go binary
 FROM golang:1.24.3 AS builder
 
 WORKDIR /app
