@@ -61,6 +61,8 @@ type model struct {
 	cpuMetrics    string
 	memoryMetrics string
 	diskMetrics   string
+	fileList      list.Model
+	fileListItems []FileListItem
 }
 
 func NewModel() model {
@@ -123,6 +125,9 @@ func NewModel() model {
 	}
 
 	l.SetItems(ToListItems(history))
+	
+	fl := list.New([]list.Item{}, fileItemDelegate{}, 0, 0)
+	fl.Title = "Files"
 	return model{
 		term:          "main",
 		cursor:        0,
@@ -134,6 +139,7 @@ func NewModel() model {
 		list:          l,
 		form:          form,
 		serverHistory: history,
+		fileList: fl,
 	}
 }
 
@@ -295,6 +301,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return runMonitorCommand(m.activeSSHClient)
 					}
 				}
+				if m.currentTab == tabFiles && m.previousTab != tabFiles && m.isConnected && m.activeSSHClient != nil {
+					return m, func() tea.Msg {
+						return runFileListCommand(m.activeSSHClient)
+					}
+				}
 			}
 		case "d":
 			if m.isConnected {
@@ -324,26 +335,49 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.currentScreen == screenMenu && m.currentTab == tabHistory {
 				index := m.list.Index()
 				if index >= 0 && index < len(m.serverHistory) {
-					err := RemoveHistoryItem(index, &m.serverHistory)
-					if err != nil {
-						m.connectionErr = fmt.Errorf("❌ Failed to remove server: %w", err)
-						return m, nil
+				err := RemoveHistoryItem(index, &m.serverHistory)
+				if err != nil {
+					m.connectionErr = fmt.Errorf("❌ Failed to remove server: %w", err)
+					return m, nil
+				}
+
+				m.list.SetItems(ToListItems(m.serverHistory))
+
+				if len(m.serverHistory) == 0 {
+					m.list.Select(0)
+				} else if index >= len(m.serverHistory) {
+					m.list.Select(len(m.serverHistory) - 1)
+				} else {
+					m.list.Select(index)
+				}
+
+				if m.currentServer != nil {
+					for _, s := range m.serverHistory {
+						if s.Host == m.currentServer.Host {
+							goto stillConnected
+						}
 					}
 
-					m.list.SetItems(ToListItems(m.serverHistory))
-
-					if index >= len(m.serverHistory) {
-				m.list.Select(len(m.serverHistory) - 1)
-			} else {
-				m.list.Select(index)
-			}
-
-			if m.currentServer != nil && m.currentServer.Host == m.serverHistory[index].Host {
 					m.isConnected = false
 					m.activeSSHClient = nil
 					m.activeSession = nil
 					m.currentServer = nil
+
 				}
+
+				stillConnected:
+				/*if index >= len(m.serverHistory) {
+					m.list.Select(len(m.serverHistory) - 1)
+				} else {
+					m.list.Select(index)
+				}
+
+				if m.currentServer != nil && m.currentServer.Host == m.serverHistory[index].Host {
+					m.isConnected = false
+					m.activeSSHClient = nil
+					m.activeSession = nil
+					m.currentServer = nil
+				}*/
 			}
 			return m, nil
 		}
@@ -392,6 +426,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.diskMetrics = msg.disk
 		}
 		return m, nil
+	case fileListMsg:
+		if msg.err != nil {
+			m.fileListItems = nil
+			m.fileList.SetItems([]list.Item{})
+			m.fileList.Title = "❌ Error loading files"
+		} else {
+			m.fileListItems = make([]FileListItem, len(msg.items))
+			for i, item := range msg.items {
+				m.fileListItems[i] = item.(FileListItem)
+			}
+			m.fileList.SetItems(msg.items)
+			m.fileList.Select(0)
+		}
+		return m, nil
 	}
 
 	var cmd tea.Cmd
@@ -399,8 +447,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch m.currentScreen {
 	case screenMenu:
-		m.list, cmd = m.list.Update(msg)
-		cmds = append(cmds, cmd)
+		if m.currentTab == tabHistory {
+			m.list, cmd = m.list.Update(msg)
+			cmds = append(cmds, cmd)
+		} else if m.currentTab == tabFiles {
+			m.fileList, cmd = m.fileList.Update(msg)
+			cmds = append(cmds, cmd)
+		}	
 	case screenForm:
 		m.form.inputs[m.form.focus], cmd = m.form.inputs[m.form.focus].Update(msg)
 		cmds = append(cmds, cmd)

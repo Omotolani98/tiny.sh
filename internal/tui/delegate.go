@@ -18,20 +18,10 @@ func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 
 
 func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	// Assert the listItem to our ServerHistoryItem type
 	s, ok := listItem.(ServerListItem)
 	if !ok {
 		return 
 	}
-
-	// Styles for text and labels
-	titleText := lipgloss.NewStyle().Foreground(lipgloss.Color(colorPrimary)).Bold(true)
-	detailText := lipgloss.NewStyle().Foreground(lipgloss.Color("#888888")).PaddingRight(1) // Subtle grey for details
-	labelStyle := lipgloss.NewStyle().Width(15).Align(lipgloss.Left).Foreground(lipgloss.Color(colorPrimary))
-
-	
-  tagLine := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("#E1F0C4")).Foreground(lipgloss.Color("#E1F0C4")).PaddingRight(1).PaddingLeft(1)
-  tagLinePwd := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("#B8B8FF")).Foreground(lipgloss.Color("#B8B8FF")).PaddingRight(1).PaddingLeft(1)
 
 	var tag string
 	if s.Server.Auth.Method == "key" {
@@ -39,9 +29,9 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	} else if s.Server.Auth.Method == "password" {
 		tag = tagLinePwd.Render("Password")
 	}
-	// Join the main title and the three formatted detail lines vertically
+
 	content := lipgloss.JoinVertical(lipgloss.Left,
-		titleText.Render(s.Server.Title), // Corrected: Use s.Title() as ServerHistoryItem now implements list.Item
+		titleText.Render(s.Server.Title), 
 		labelStyle.Render(s.Server.Username),
 		detailText.Render(s.Server.LastConnected),
 		lipgloss.JoinHorizontal(lipgloss.Left, tag),

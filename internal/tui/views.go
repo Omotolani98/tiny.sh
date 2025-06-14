@@ -91,7 +91,7 @@ func renderCurrentTab(m model) string {
 	case tabMonitor:
 		content = renderMonitorTab(m)
 	case tabFiles:
-		content = "Files Tab Content"
+		content = renderFilesTab(m)
 	case tabSettings:
 		content = "Settings Tab Content"
 	default:
@@ -194,4 +194,11 @@ func renderMonitorTab(m model) string {
 		blockStyle.Render(sectionTitle("🧠", "Memory Usage") + "\n" + m.memoryMetrics),
 		blockStyle.Render(sectionTitle("💾", "Disk Usage") + "\n" + m.diskMetrics),	
 	)
+}
+
+func renderFilesTab(m model) string {
+	if !m.isConnected {
+		return "🔌 Not connected."
+	}
+	return m.fileList.View()
 }
