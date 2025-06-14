@@ -14,3 +14,5 @@ Make sure to refresh shell (e.g. bash, zsh, fish, etc.)
 ```
 source ~/.bashrc
 ```
+
+![Made with VHS](https://vhs.charm.sh/vhs-49YlPKit7IavzjVIEKdl0v.gif)

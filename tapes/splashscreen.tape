@@ -60,46 +60,53 @@ Output splashscreen.gif
 Require echo
 
 Set Shell "bash"
-Set FontSize 32
+Set FontSize 28
 Set Width 1920
-Set Height 1800
+Set Height 1080
 
-Type "go run ../cmd/main.go" Sleep 500ms  Enter
+Type "tiny.sh" Sleep 2s  Enter
 
 Sleep 5s
 
 Enter
 
-Sleep 2s
-
-Down 
-Sleep 2s
-
-Down 
-Sleep 2s
-
-Tab
-Sleep 2s
-
-Down
-Sleep 2s
-
-Down
-Sleep 2s
-
-Tab
-Sleep 2s
-
-Down 
-Sleep 2s
-
-Tab
-Sleep 2s
-
-Down
-Sleep 2s
-
-Down
-Sleep 2s
-
 Sleep 3s
+
+Tab
+Sleep 5s
+
+Tab
+Sleep 3s
+
+Tab
+Sleep 3s
+
+Tab
+Sleep 3s
+
+#N
+#Sleep 2s
+
+#Type "server.choco"
+#Sleep 2s
+
+#Tab
+#Sleep 2s
+
+#Type "22"
+#Sleep 2s
+
+#Tab
+#Sleep 2s
+
+#Type "Password"
+#Sleep 2s
+
+#Shift+Tab
+#Sleep 1s
+
+#Type "tolani"
+#Sleep 2s
+
+#Enter
+#Sleep 2s
