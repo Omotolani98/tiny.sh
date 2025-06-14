@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -70,7 +72,7 @@ func trySSHConnect(server ServerHistoryItem, requestID string) tea.Msg {
 	}
 }
 
-func runMonitorCommand(client *ssh.Client) tea.Msg {
+/*func runMonitorCommand(client *ssh.Client) tea.Msg {
 	var cpuOut, memOut, diskOut bytes.Buffer
 
 	// CPU
@@ -114,4 +116,88 @@ func runMonitorCommand(client *ssh.Client) tea.Msg {
 		memory: memOut.String(),
 		disk:   diskOut.String(),
 	}
+}*/
+
+func runMonitorCommand(client *ssh.Client) tea.Msg {
+	var cpuOut, memOut, diskOut bytes.Buffer
+
+	// CPU + Uptime
+	session, err := client.NewSession()
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+	defer session.Close()
+
+	session.Stdout = &cpuOut
+	err = session.Run(`top -bn1 | grep -E "load average|Cpu"`)
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+
+	uptime, userCPU, sysCPU, idleCPU, stealCPU := extractUptimeAndCPU(cpuOut.String())
+	cpuFormatted := fmt.Sprintf(`Uptime: %s
+User Space: %s of CPU
+System Space: %s of CPU
+Idle: %s of CPU
+Steal Time: %s of CPU`, uptime, userCPU, sysCPU, idleCPU, stealCPU)
+
+	// Memory
+	memSession, err := client.NewSession()
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+	defer memSession.Close()
+
+	memSession.Stdout = &memOut
+	err = memSession.Run(`free -m | awk 'NR==2{printf "Used: %sMB / Total: %sMB", $3, $2}'`)
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+
+	// Disk
+	diskSession, err := client.NewSession()
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+	defer diskSession.Close()
+
+	diskSession.Stdout = &diskOut
+	err = diskSession.Run(`df -h / | awk 'NR==2{printf "Used: %s / Total: %s (%s)", $3, $2, $5}'`)
+	if err != nil {
+		return monitorDataMsg{err: err}
+	}
+
+	return monitorDataMsg{
+		cpu:    cpuFormatted,
+		memory: memOut.String(),
+		disk:   diskOut.String(),
+	}
+}
+
+// Helper function to extract uptime and CPU stats from top output
+func extractUptimeAndCPU(output string) (string, string, string, string, string) {
+	var uptime, userCPU, sysCPU, idleCPU, stealCPU string
+
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "load average") {
+			if parts := strings.Split(line, "up "); len(parts) > 1 {
+				uptimeParts := strings.Split(parts[1], " days")
+				if len(uptimeParts) > 0 {
+					uptime = strings.TrimSpace(uptimeParts[0]) + " days"
+				}
+			}
+		}
+		if strings.Contains(line, "%Cpu") {
+			re := regexp.MustCompile(`([\d\.]+)\s+us,?\s+([\d\.]+)\s+sy,?.*?([\d\.]+)\s+id,?.*?([\d\.]+)\s+st`)
+			matches := re.FindStringSubmatch(line)
+			if len(matches) >= 5 {
+				userCPU = matches[1] + "%"
+				sysCPU = matches[2] + "%"
+				idleCPU = matches[3] + "%"
+				stealCPU = matches[4] + "%"
+			}
+		}
+	}
+	return uptime, userCPU, sysCPU, idleCPU, stealCPU
 }

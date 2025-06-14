@@ -83,4 +83,11 @@ var (
 		MarginBottom(1).
 		BorderLeft(true).
 		BorderLeftForeground(lipgloss.Color(coralPink))
+
+	titleText = lipgloss.NewStyle().Foreground(lipgloss.Color(colorPrimary)).Bold(true)
+	detailText = lipgloss.NewStyle().Foreground(lipgloss.Color("#888888")).PaddingRight(1)
+	labelStyle = lipgloss.NewStyle().Width(15).Align(lipgloss.Left).Foreground(lipgloss.Color(colorPrimary))
+	
+  tagLine = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("#E1F0C4")).Foreground(lipgloss.Color("#E1F0C4")).PaddingRight(1).PaddingLeft(1)
+  tagLinePwd = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("#B8B8FF")).Foreground(lipgloss.Color("#B8B8FF")).PaddingRight(1).PaddingLeft(1)
 )
